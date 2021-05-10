@@ -8,7 +8,7 @@ const chalk = require('chalk');
 const mongoose = require('mongoose');
 
 // PORT
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 8000
 
 
 // DATABASE
@@ -28,8 +28,16 @@ app.use(cors());
 
 
 // SpaceLY Routes
+
+// User
 const authRoutes = require("./routes/user/auth");
 const userProfileRoutes = require("./routes/user/userprofile");
+
+//Admin
+
+const adminRoutes = require("./routes/admin/auth");
+
+
 
 app.get("/", (req, res) => {
     return res.json({
@@ -41,6 +49,9 @@ app.get("/", (req, res) => {
 // SpaceLY routes fixed
 app.use("/api", authRoutes);
 app.use("/api", userProfileRoutes);
+
+app.use("/api", adminRoutes);
+
 
 
 // Server Starting
