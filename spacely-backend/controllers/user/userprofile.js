@@ -26,12 +26,12 @@ exports.userprofile = (req, res) => {
                 error: err
             })
         }
-
+        console.log(done)
 
         const token = jwt.sign({ _id: done._id }, process.env.SECRET);
         res.cookie("token", token, { expire: new Date() + 99999 });
-        const { _id, name, phone, userID } = done;
-        return res.json({ token, user: { _id, name, phone, userID } });
+        const { _id, name, userID } = done;
+        return res.json({ token, user: { _id, name, userID } });
 
 
     });
