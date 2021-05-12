@@ -31,6 +31,9 @@ const Routes = () => {
           <Route path="/otp" exact component={OTP} />
           <Route path="/profilecomplete" exact component={Profile} />
 
+          <Route path="/profilecomplete" exact component={Profile} />
+
+
 
 
         </Switch>

@@ -1,4 +1,5 @@
 const User = require("../../models/user/auth");
+const Temp = require("../../models/user/tempauth");
 const { v4: uuidv4 } = require('uuid');
 var randomize = require('randomatic');
 const Nexmo = require('nexmo');
@@ -19,74 +20,36 @@ const vonage = new Nexmo({
 exports.signup = (req, res) => {
 
 
-    User.findOne({ watsappno: req.body.phone }, (err, gotuser) => {
+    Temp.findById({ phone: req.body.phone }, (err, gotuser) => {
         if (err) {
             return res.status(400).json({
                 error: err
             })
         }
-        console.log(gotuser == null);
-        if (gotuser == null || !gotuser) {
-
-            const temp = new Temp();
-
-            const user_phone = req.body.phone;
-            const user_uuid = uuidv4();
-            const user_otp = randomize('0', 4)
-
-
-            const from = "SpaceLY "
-            const to = "+91" + req.body.phone;
-            const text = `Your SpaceLY verification code is. ${user_otp}. Don't share this code with anyone; our employees will never ask for the code.`
-
-            vonage.message.sendSms(from, to, text, (err, responseData) => {
-                if (err) {
-                    return res.json({
-                        error: "SMS is not working"
-                    })
-                } else {
-                    if (responseData.messages[0]['status'] === "0") {
-                        console.log("Message sent successfully.");
-                        temp.phone = req.body.phone;
-                        temp.otp = user_otp;
-                        temp.temp_userid = user_uuid;
-                        temp.save((err, temp) => {
-                            if (err) {
-                                return res.status(503).json({
-                                    error: 'Sry, Some problem in server'
-                                })
-                            }
-                            return res.json({
-                                msg: temp,
-                                user_temp_id: temp.temp_userid
-                            })
-                        });
-
-
-
-
-
-                    } else {
-                        console.log(`Message failed with error: ${responseData.messages[0]['error-text']}`);
-                    }
-                }
+        if (gotuser) {
+            return res.status(400).json({
+                msg: "You can use the latest OTP"
             })
-        } else {
-            const tempID = gotuser.temp_userid;
-            Temp.findOne({ temp_userid: tempID }, (err, got) => {
-                if (err) {
-                    return res.status(400).json({
-                        error: err
-                    })
-                }
-                const temp_already = randomize('0', 4)
+        }
+        User.findOne({ watsappno: req.body.phone }, (err, gotuser) => {
+            if (err) {
+                return res.status(400).json({
+                    error: err
+                })
+            }
+            console.log(gotuser == null);
+            if (gotuser == null || !gotuser) {
 
+                const temp = new Temp();
 
+                const user_phone = req.body.phone;
+                const user_uuid = uuidv4();
+                const user_otp = randomize('0', 4)
 
 
                 const from = "SpaceLY "
                 const to = "+91" + req.body.phone;
-                const text = `Your SpaceLY verification code to Login. ${temp_already}. Don't share this code with anyone; our employees will never ask for the code.`
+                const text = `Your SpaceLY verification code is. ${user_otp}. Don't share this code with anyone; our employees will never ask for the code.`
 
                 vonage.message.sendSms(from, to, text, (err, responseData) => {
                     if (err) {
@@ -96,19 +59,17 @@ exports.signup = (req, res) => {
                     } else {
                         if (responseData.messages[0]['status'] === "0") {
                             console.log("Message sent successfully.");
-                            got.otp = temp_already;
-
-                            got.save((err, temp) => {
+                            temp.phone = req.body.phone;
+                            temp.otp = user_otp;
+                            temp.temp_userid = user_uuid;
+                            temp.save((err, temp) => {
                                 if (err) {
                                     return res.status(503).json({
                                         error: 'Sry, Some problem in server'
                                     })
                                 }
                                 return res.json({
-
-                                    // TODO Testing Responce
                                     msg: temp,
-                                    user: gotuser,
                                     user_temp_id: temp.temp_userid
                                 })
                             });
@@ -122,13 +83,71 @@ exports.signup = (req, res) => {
                         }
                     }
                 })
+            } else {
+                const tempID = gotuser.temp_userid;
+                Temp.findOne({ temp_userid: tempID }, (err, got) => {
+                    if (err) {
+                        return res.status(400).json({
+                            error: err
+                        })
+                    }
+                    const temp_already = randomize('0', 4)
 
 
-            })
 
 
-        }
-    })
+                    const from = "SpaceLY "
+                    const to = "+91" + req.body.phone;
+                    const text = `Your SpaceLY verification code to Login. ${temp_already}. Don't share this code with anyone; our employees will never ask for the code.`
+
+                    vonage.message.sendSms(from, to, text, (err, responseData) => {
+                        if (err) {
+                            return res.json({
+                                error: "SMS is not working"
+                            })
+                        } else {
+                            if (responseData.messages[0]['status'] === "0") {
+                                console.log("Message sent successfully.");
+                                got.otp = temp_already;
+
+                                got.save((err, temp) => {
+                                    if (err) {
+                                        return res.status(503).json({
+                                            error: 'Sry, Some problem in server'
+                                        })
+                                    }
+                                    return res.json({
+
+                                        // TODO Testing Responce
+                                        msg: temp,
+                                        user: gotuser,
+                                        user_temp_id: temp.temp_userid
+                                    })
+                                });
+
+
+
+
+
+                            } else {
+                                console.log(`Message failed with error: ${responseData.messages[0]['error-text']}`);
+                            }
+                        }
+                    })
+
+
+                })
+
+
+            }
+        })
+
+
+    });
+
+
+
+
 
 
 
