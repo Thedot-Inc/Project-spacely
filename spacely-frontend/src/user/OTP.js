@@ -2,7 +2,8 @@ import React,{useState,useEffect} from 'react'
 import OtpInput from 'react-otp-input';
 import { Form,Button,Modal } from 'react-bootstrap';
 import {verify} from "./userapi/auth"
-import { Redirect } from 'react-router-dom';
+import { Redirect ,Link} from 'react-router-dom';
+import { userrealauthenticate } from './userapi/middleware/userauth';
 
 
 export default function OTP() {
@@ -13,22 +14,31 @@ export default function OTP() {
         error: "",
         loading: false,
         didRedirect: false,
+        returnto:false,
         iswrong:false,
-        needtoComplete:false
+        needtoComplete:false,
+        goToHome:false
       });
 
 
       useEffect(() => {
-        settempId(localStorage.getItem("temp_userId"));
+        settempId(localStorage.getItem("tempID"));
       }, [])
 
-     const {error,loading,didRedirect,iswrong,needtoComplete} = values; 
+     const {error,loading,didRedirect,goToHome,iswrong,needtoComplete,returnto} = values; 
     const handleChange = (event) =>{
         setOtp(event.target.value);
     }
 
     const onResend = () => {
 
+    }
+    const isRetureTo = () => {
+        if(returnto)
+        return <Redirect to="/login" /> 
+    }
+    const onRetry = () => {
+        setValues({iswrong: false});
     }
     const isWorng = () => {
         if(iswrong){
@@ -37,9 +47,13 @@ export default function OTP() {
                 <h6>
                 Wrong OTP, request for resend
                 </h6>
-                <Button variant="outline-primary" size="lg" block onClick={onResend}>
+                <Button variant="outline-primary" size="md" block onClick={onResend}>
     Resend
   </Button>
+  <Button variant="outline-primary" size="md" block onClick={onRetry}>
+    Retry
+  </Button>
+  
             </div>
         )
         }
@@ -52,7 +66,10 @@ export default function OTP() {
         }
     }
 
-
+    const redirectToHome = () => {
+        if(goToHome)
+        return <Redirect to="/"/> 
+    }
     const otpForm = () => {
         if(!iswrong){
            return (<Form className="ml-lg-5">
@@ -75,24 +92,33 @@ export default function OTP() {
                 setValues({ ...values, error: data.error, loading: false });
 
             }
-            if(data.emsg){
-                setValues({ ...values, error: data.error,iswrong:true, loading: false });
+            console.log(data);
+            if(data.wrong){
+                setValues({ ...values, error: data.error, loading: false,iswrong:true });
 
             }
-
-            if(data.profilestatus){
-                setValues({ ...values, error: data.error,iswrong:false, loading: false,needtoComplete:true });
+            else if(data.incomplete){
+                setValues({ ...values, error: data.error, loading: false,iswrong:false,needtoComplete:true });
 
             }
-            else{
-                console.log(data);
+            else if(data.returnto){
+                setValues({ ...values, error: data.error, loading: false,iswrong:false,needtoComplete:false,returnto:true });
+
+            }
+            else if(data.success){
+                userrealauthenticate(data.success, () => {
+                    setValues({ ...values, error: data.error, loading: false,iswrong:false,needtoComplete:false,returnto:false, goToHome:true});
+
+                })
+
             }
         })
     }
 
     return (
         <div>
-           
+           {redirectToHome()}
+           {isRetureTo()}
 {userneedtoComplete()}
             <div className="mt-5 ml-lg-5" style={{padding:20}}>
          {otpForm()}

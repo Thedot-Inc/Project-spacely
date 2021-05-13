@@ -8,16 +8,20 @@ const userSchema = new mongoose.Schema({
 
     userID: {
         type: String,
-        required: true
     },
 
 
     phone: {
         type: String,
         trim: true,
-        unique: true,
         maxlength: 10
     },
+    otp: {
+        type: String,
+        trim: true,
+        unique: true
+    },
+
 
     email: {
         type: String,
@@ -25,16 +29,15 @@ const userSchema = new mongoose.Schema({
         unique: true,
     },
 
-    otp: {
-        type: String,
-        trim: true,
-        unique: true
-    },
-
     verified: {
         type: Boolean
     },
 
+
+    profileId: {
+        type: [ObjectId],
+        ref: "Temp",
+    },
 
     temp_userid: {
         type: String,
@@ -90,12 +93,13 @@ const userSchema = new mongoose.Schema({
     // Account completed status
 
     completed: {
-        type: Boolean
+        type: Boolean,
+        default: false
     }
 
 
 
-});
+}, { timestamps: true });
 
 
 

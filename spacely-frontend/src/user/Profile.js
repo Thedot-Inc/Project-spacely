@@ -8,20 +8,26 @@ import 'firebase/storage'
 
 import {profile} from "./userapi/profile"
 import { Redirect } from 'react-router-dom';
-import { usertempauthenticate } from './userapi/middleware/userauth';
+import { userrealauthenticate } from './userapi/middleware/userauth';
 
+const firebaseConfig = {
+  apiKey: "AIzaSyB_vzl-xdVLcpGagOMRK4g0Fj0F6nCVuoo",
+  authDomain: "spacely-user.firebaseapp.com",
+  databaseURL: "https://spacely-user-default-rtdb.firebaseio.com",
+  projectId: "spacely-user",
+  storageBucket: "spacely-user.appspot.com",
+  messagingSenderId: "78178919942",
+  appId: "1:78178919942:web:ecfdf774593e1af5ebc587",
+  measurementId: "G-ZDEL4NK9N0"
+};
+  // Initialize Firebase
 
-// const firebaseConfig = {
-//     apiKey: "AIzaSyB_vzl-xdVLcpGagOMRK4g0Fj0F6nCVuoo",
-//     authDomain: "spacely-user.firebaseapp.com",
-//     projectId: "spacely-user",
-//     storageBucket: "spacely-user.appspot.com",
-//     messagingSenderId: "78178919942",
-//     appId: "1:78178919942:web:ecfdf774593e1af5ebc587",
-//     measurementId: "G-ZDEL4NK9N0"
-//   };
-//   // Initialize Firebase
-//   firebase.initializeApp(firebaseConfig);
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+ }else {
+    firebase.app(); // if already initialized, use that one
+ }
+
 
 
 
@@ -35,9 +41,23 @@ export default function Profile() {
     const [isredirect, setisredirectn] = useState(false);
 
     const [doneLocation, setdoneLocation] = useState(false);
-    const [pictures, setPictures] = useState([]);
+    
+
+
+    const [image, setimage] = useState(null);
+    const [progress, setprogress] = useState(0);
+    const [downloadURL, setdownloadURL] = useState(null)
 
     const [temp_userid, settemp_userid] = useState('');
+    const [watsappno, setWatsappno] = useState('');
+
+
+    // Error condiction
+    const [toLogin, settoLogin] = useState(null);
+    const [clearToLogin, setclearToLogin] = useState(null);
+    const [errorSaving, seterrorSaving] = useState(null);
+    const [toHome, settoHome] = useState(null)
+    //
 
 
     const [values, setValues] = useState({
@@ -51,17 +71,14 @@ export default function Profile() {
 
 
       useEffect(() => {
-        settemp_userid(localStorage.getItem('temp_userId'));
+        settemp_userid(localStorage.getItem('tempID'));
       }, [])
 
       const onHandler  = name => event => {
         setValues({ ...values, error: false, [name]: event.target.value });
       }
       const { name, error, loading, didRedirect,email ,aadhar} = values;
-    const onDrop = picture => {
-      setPictures([...pictures, picture]);
-      console.log(picture);
-    };
+   
 
 
 const uploadProfilePic =() => {
@@ -70,26 +87,40 @@ const uploadProfilePic =() => {
 
 
 const doRiredict = () => {
-    if(didRedirect)
+    if(toHome)
     return <Redirect to="/" />
+}
+const doRiredicttoLogin = () => {
+  if(toLogin || clearToLogin)
+  return <Redirect to="/login" />
 }
 
 const onCompleteProfile = (event) => {
     event.preventDefault();
     const location = [latitude,longitude]
-    profile({name,email,aadhar,temp_userid,location}).then((data) => {
+    profile({name,email,aadhar,temp_userid,location,downloadURL}).then((data) => {
         if(data.error){
             setValues({ ...values, error: data.error, loading: false });
 
         }
         else{
             console.log(data);
-            window.localStorage.clear();
-            usertempauthenticate(data, () => {
-                setValues({ ...values, error: '', loading: false,didRedirect:true });
-
-            })
-          
+            if(data.notAuth){
+              settoLogin(true)
+            }
+            else if(data.isnotExist){
+              window.localStorage.clear();
+              setclearToLogin(true) 
+            }
+            else if(data.errorsaving){
+              seterrorSaving(true)
+            }
+            else if(data.success){
+              userrealauthenticate(data.success, () => {
+                  // redirect here
+                  settoHome(true)
+              })
+            }
 
 
         }
@@ -100,13 +131,23 @@ const onCompleteProfile = (event) => {
         if(doneLocation){
             return(
                 <Form className="mt-5">
-                        <ImageUploader
-                withIcon={true}
-                buttonText='Choose profile'
-                onChange={onDrop}
-                imgExtension={['.jpg', '.gif', '.png', '.gif']}
-                maxFileSize={5242880}
-            />
+                   <div>
+                   <h4>upload image</h4>
+        <label>
+          Choose file
+        <input type="file" id="file" onChange={handleChange} />        
+        </label>
+
+        {progress}
+        <button className="button" onClick={handleUpload}>Upload</button>
+        <img
+          className="ref"
+          src={downloadURL || "https://via.placeholder.com/400x300"}
+          alt="Uploaded Images"
+          height="300"
+          width="400"
+        />
+                   </div>
             <Button variant="danger" size="md" block onClick={uploadProfilePic}>
     Upload profile pic
   </Button>
@@ -233,9 +274,43 @@ const onCompleteProfile = (event) => {
     
       }
 
+      const handleChange = (e) =>{
+        if(e.target.files[0]){
+          setimage(e.target.files[0])
+      }
+    }
+
+    const handleUpload = (event) =>{
+    event.preventDefault();
+
+      // console.log(this.state.image);
+      let file = image;
+      var storage = firebase.storage();
+      var storageRef = storage.ref();
+      var uploadTask = storageRef.child('userprofilepic/' + file.name).put(file);
+    
+      uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED,
+        (snapshot) =>{
+          var progress = Math.round((snapshot.bytesTransferred/snapshot.totalBytes))*100
+  
+          setprogress(progress)
+        },(error) =>{
+          throw error
+        },() =>{
+          // uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) =>{
+    
+          uploadTask.snapshot.ref.getDownloadURL().then((url) =>{
+            setdownloadURL(url)
+          })
+        document.getElementById("file").value = null
+    
+       }
+     ) 
+    }
     return (
         <div>
             {doRiredict()}
+            {doRiredicttoLogin()}
             <h3>
                 User need to complete profile
             </h3>
