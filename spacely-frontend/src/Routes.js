@@ -39,7 +39,7 @@ const Routes = () => {
           <UserCheck path="/otp" component={OTP} />
           <Route path="/profilecomplete" exact component={Profile} />
 
-          <Route path="/profilecomplete" exact component={Profile} />
+          <Route path="/admin/login" exact component={AdminHome} />
 
 
 
