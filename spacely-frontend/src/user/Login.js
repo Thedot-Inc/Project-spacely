@@ -38,24 +38,36 @@ export default function Login() {
                 setValues({ ...values, error: data.error, loading: false });
             }
             else{
-                
-                usertempauthenticate(data,() => {
-                    console.log(data);
-                    localStorage.setItem("user",JSON.stringify(data.msg));
-                    localStorage.setItem("all_data",JSON.stringify(data));
-                    localStorage.setItem("temp_userId",JSON.stringify(data.user_temp_id));
+                if(data.useragain){
+                  setValues({
+                    ...values,
+                    didRedirect: true
+                  });
+                }
+                console.log(data);
+                localStorage.setItem("tempID",JSON.stringify(data.tempID));
+                setValues({
+                          ...values,
+                          didRedirect: true
+                        });
 
-                    cookie.save('userId', JSON.stringify(data.user_temp_id));
-                    cookie.save('user-temp-id',JSON.stringify(data.msg.temp_userid));
+                // usertempauthenticate(data,() => {
+                //     console.log(data);
+                //     localStorage.setItem("user",JSON.stringify(data.msg));
+                //     localStorage.setItem("all_data",JSON.stringify(data));
+                //     localStorage.setItem("temp_userId",JSON.stringify(data.user_temp_id));
+
+                //     cookie.save('userId', JSON.stringify(data.user_temp_id));
+                //     cookie.save('user-temp-id',JSON.stringify(data.msg.temp_userid));
                     
-                    //Testing console.log(data);
-                    setValues({
-                        ...values,
-                        didRedirect: true
-                      });
+                //     //Testing console.log(data);
+                //     setValues({
+                //         ...values,
+                //         didRedirect: true
+                //       });
 
 
-                })
+                // })
                 
 
 

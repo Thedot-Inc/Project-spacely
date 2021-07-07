@@ -4,3 +4,11 @@ export const usertempauthenticate = (data, next) => {
         next();
     }
 }
+
+
+export const userrealauthenticate = (data, next) => {
+    if (typeof window !== "undefined") {
+        localStorage.setItem("jwt_original", JSON.stringify(data));
+        next();
+    }
+}
